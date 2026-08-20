@@ -497,7 +497,7 @@ class GATSCL(nn.Module):
 #     # Adjust this to match the data format
 #     # data = YourDataLoader()
     
-#     # Initialize model
+#     # Initialize the model
 #     model = TAMModel(
 #         in_channels=data.num_features,
 #         hidden_channels=args.hidden_dim,

@@ -56,7 +56,7 @@ def embeddings2graph(embeddings, adj_matrix, use_emb="first"):
         mode='replicate'
     )  # Expand to 1536 dimensions
      #edge_attr: in-degree features concatenated across dialogue turns
-     #x: node features from the first-round initial replies
+     #x: node features from the first-round replies
     return x, edge_index, edge_attr_expanded
 
 
@@ -130,7 +130,7 @@ async def defense_communication(ag:AgentGraphWithDefense, gnn: MyGAT, qa_data, a
     # # Cosine similarity of each node to the graph representation
     # similarities = torch.mm(z_proj, graph_proj.t())  # [N, 1]
     # node_to_graph_sim = similarities.squeeze()  # [N]
-    # # Anomaly score = 1 - similarity (higher means more anomalous)
+    # # Anomaly score = 1 - similarity (higher = more anomalous)
     # anomaly_scores = 1 - node_to_graph_sim
     # # Threshold the scores to obtain anomaly labels
     # anomaly_labels = (anomaly_scores > threshold).float()

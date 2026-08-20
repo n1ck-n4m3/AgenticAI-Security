@@ -38,7 +38,7 @@ def gen_model_training_set(language_dataset, embedding_model, save_path):
                 communication_embeddings[agent_idx].append(turn_i_embeddings[agent_idx])
         
         communication_embeddings = np.array(communication_embeddings)
-        edge_attr = np.array(communication_embeddings[edge_index[1]], copy=True)  # edge_index[1] is the destination node; each utterance is sent to that destination
+        edge_attr = np.array(communication_embeddings[edge_index[1]], copy=True)  # edge_index[1] is the destination; each utterance is sent to that node
         
         data = {}
         data["adj_matrix"] = adj_matrix_np

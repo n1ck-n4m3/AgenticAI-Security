@@ -125,7 +125,7 @@ class AnomalyDetector:
             edge_index = data.edge_index.to(self.device)
             adj = to_dense_adj(edge_index)[0]
             
-            # Reconstructions
+            # Get reconstructions
             x_recon, adj_recon, z = self.model(x, edge_index)
             
             # Compute anomaly scores
@@ -142,7 +142,7 @@ class AnomalyDetector:
             scores = anomaly_scores.cpu().numpy()
             labels = anomaly_labels.cpu().numpy()
             
-            # Per-node details
+            # Build per-node details
             node_details = []
             for i in range(len(scores)):
                 node_details.append({
@@ -174,23 +174,23 @@ class AnomalyDetector:
         
         # Save detailed results
         with open(os.path.join(output_dir, f'anomaly_detection_{timestamp}.txt'), 'w') as f:
-            f.write("Anomaly detection results:\n")
-            f.write(f"Number of flagged anomalous nodes: {results['num_anomalies']}\n")
-            f.write(f"Threshold used: {results['threshold_used']}\n\n")
+            f.write("异常检测结果:\n")
+            f.write(f"检测到的异常节点数量: {results['num_anomalies']}\n")
+            f.write(f"使用的阈值: {results['threshold_used']}\n\n")
             
-            f.write("Per-node details (sorted by anomaly score):\n")
+            f.write("节点详细信息 (按异常分数排序):\n")
             for idx in results['sorted_indices']:
                 node = results['node_details'][idx]
-                f.write(f"Node {node['node_id']}:\n")
-                f.write(f"  Anomaly scores: {node['anomaly_score']:.4f}\n")
-                f.write(f"  Attribute reconstruction error: {node['attr_error']:.4f}\n")
-                f.write(f"  Structure reconstruction error: {node['struct_error']:.4f}\n")
-                f.write(f"  Is anomaly: {node['is_anomaly']}\n\n")
+                f.write(f"节点 {node['node_id']}:\n")
+                f.write(f"  异常分数: {node['anomaly_score']:.4f}\n")
+                f.write(f"  属性重构误差: {node['attr_error']:.4f}\n")
+                f.write(f"  结构重构误差: {node['struct_error']:.4f}\n")
+                f.write(f"  是否异常: {node['is_anomaly']}\n\n")
         
         # Save scores
         np.save(os.path.join(output_dir, f'anomaly_scores_{timestamp}.npy'), results['anomaly_scores'])
         
-        print(f"Results saved to {output_dir} directory")
+        print(f"结果已保存到 {output_dir} 目录")
 
 def parse_args():
     parser = argparse.ArgumentParser(description='GAE-based Anomaly Detection')
@@ -213,7 +213,7 @@ def main():
     # Adjust this to match your data format
     # data = YourDataLoader()
     
-    # Initialize model
+    # Initialize the model
     model = GCNModelAE(
         in_channels=data.num_features,
         hidden_channels=args.hidden_dim,
@@ -226,12 +226,12 @@ def main():
     if args.mode == 'train':
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         detector.train(data, optimizer, args.epochs)
-        print("Training finished; model saved")
+        print("训练完成，模型已保存")
     
     else:  # test mode
         # Load the pretrained model
         model.load_state_dict(torch.load(args.model_path))
-        print(f"Load model from: {args.model_path}")
+        print(f"加载模型从: {args.model_path}")
         
         # Run anomaly detection
         results = detector.detect_anomalies(data, args.threshold)

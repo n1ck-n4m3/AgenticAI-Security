@@ -53,7 +53,7 @@ def embeddings2graph(embeddings, adj_matrix):
         mode='replicate'
     )  # Expand to 1536 dimensions
      #edge_attr: in-degree features concatenated across dialogue turns
-     #x: node features from the first-round initial replies
+     #x: node features from the first-round replies
     return x, edge_index, edge_attr_expanded
 
 

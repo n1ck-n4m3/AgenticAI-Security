@@ -26,9 +26,9 @@ from Prem_gad import PREMModel
 
 def rescale(x: torch.Tensor) -> torch.Tensor:
     """
-    Rescale scores to [0, 1]
+    Rescale scores to the [0, 1] range
     
-    range
+     
     
     Args:
         x: Input tensor
@@ -319,25 +319,25 @@ def main():
     train_dataset = AgentGraphDataset(args.dataset_path, phase="train")
     val_dataset = AgentGraphDataset(args.dataset_path, phase="val")
     
-    print(f"Train set size: {len(train_dataset)}")
-    print(f"Val set size: {len(val_dataset)}")
+    print(f"训练集大小: {len(train_dataset)}")
+    print(f"验证集大小: {len(val_dataset)}")
     
     trainloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     # Use a val batch size of at least two samples
     test_batch_size = min(args.batch_size, max(2, len(val_dataset) // 10))
     testloader = DataLoader(val_dataset, batch_size=test_batch_size, shuffle=False)
     
-    print(f"Test batch size: {test_batch_size}")
+    print(f"使用的测试batch大小: {test_batch_size}")
     
     # Input dimension
     example = train_dataset[0]
     edge_attr = example.edge_attr
     in_channels = edge_attr.size(-1)  # Use the edge-feature dimension as the input size
     
-    # Device
+    # Set device
     device = f"cuda:{args.device}" if torch.cuda.is_available() else "cpu"
     
-    # Initialize model
+    # Initialize the model
     # model = ContrastiveGAE(
     #     in_channels=in_channels,
     #     hidden_channels=args.hidden_dim,
