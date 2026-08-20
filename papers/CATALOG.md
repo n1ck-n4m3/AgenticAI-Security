@@ -137,15 +137,6 @@ Kept in the local research library (not mirrored here).
 
 Madry AT, Group DRO, calibration, deep ensembles, Energy OOD, conformal risk control, feature squeezing, Reluplex, DeepPoly, IBP, shielding, DP-SGD, fair representations, PBFT.
 
-## Close reads（已精读）
-
-| 笔记 | 路径 |
-|---|---|
-| G-Safeguard / BlindGuard / XG-Guard / GUARDIAN / Resilience | [`close_reads/defenses/`](close_reads/defenses/) |
-| 五篇防御速通 | [`close_reads/defenses/五篇MAS防御论文_最终速通总览.md`](close_reads/defenses/五篇MAS防御论文_最终速通总览.md) |
-| TAMAS / Conjunctive / NetSafe / ASB / CORBA | [`close_reads/attacks_benchmarks/`](close_reads/attacks_benchmarks/) |
-| 局限与可改进 | [`close_reads/defenses/已读论文_局限与可改进.md`](close_reads/defenses/已读论文_局限与可改进.md) |
-
 ## Counts
 
 | Bucket | Approx. |

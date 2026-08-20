@@ -12,7 +12,6 @@
 |---|---|
 | 看全库标题、链接、一句话定位 | [`CATALOG.md`](CATALOG.md) |
 | 看 2025–2026 新补的顶会/优质会 | [`GAP_2025_2026.md`](GAP_2025_2026.md) |
-| 走 G-Safeguard 族精读 | [`close_reads/`](close_reads/) |
 | 62 篇旧导读（按原方向一/二/三） | [`guides/Agentic_AI_Security_Reading_Guide_2024-2026.md`](guides/Agentic_AI_Security_Reading_Guide_2024-2026.md) |
 
 Public GitHub has markdown only. Local research checkout also stores `YYYY_VENUE_ShortName.pdf`.
@@ -33,7 +32,6 @@ papers/
 │   └── jailbreak_backdoor_privacy/
 ├── 03_ai_for_security/              # 用 LLM 做安全（优先级靠后）
 ├── 04_foundations_trustworthy_ml/   # 可迁移的可信 ML 经典
-├── close_reads/                     # 精读笔记与中文编译版
 └── guides/                          # 深度导读与旧清单
 ```
 
@@ -61,4 +59,3 @@ G-Safeguard → BlindGuard → XG-Guard 是图异常检测族。补漏之后，�
 4. **Cowpox**（ICML 2025）+ **ResMAS / Byzantine Reliability**（AAAI 2026）— 更接近「恢复 / 结构韧性」，而不只是隔离。
 5. **MASLeak**（USENIX Security 2026）+ **A2ASecBench**（ICLR 2026）— 黑盒 IP 泄漏与协议层基准。
 
-精读笔记仍在 `close_reads/`，不随 PDF 搬家而重写。

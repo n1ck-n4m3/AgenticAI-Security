@@ -14,7 +14,6 @@ Paper PDFs are **not** in this repository (copyright). Use the catalog links.
 | [papers/GAP_2025_2026.md](papers/GAP_2025_2026.md) | 2025–2026 top-venue papers added after the original 62-paper list |
 | [papers/README.md](papers/README.md) | Taxonomy rules |
 | [papers/guides/Agentic_AI_Security_Reading_Guide_2024-2026.md](papers/guides/Agentic_AI_Security_Reading_Guide_2024-2026.md) | Longer notes on the original 62 papers |
-| [papers/close_reads/](papers/close_reads/) | Deep notes on G-Safeguard, BlindGuard, XG-Guard, GUARDIAN, Resilience, TAMAS, Conjunctive, NetSafe, ASB, CORBA |
 
 ## Taxonomy
 
@@ -41,8 +40,8 @@ Upstream papers: [BlindGuard](https://aclanthology.org/2026.acl-long.1819/), [XG
 
 ## What this repo is not
 
+- Not meeting notes, advisor correspondence, or unpublished research proposals.
 - Not a copy of the USENIX 2027 SoK evidence ledger.
-- Not a claim that model-assisted corpus labels are human-verified.
 - Not a dump of copyrighted PDFs.
 
 ## Acknowledgements
