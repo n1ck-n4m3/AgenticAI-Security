@@ -57,7 +57,7 @@ def get_args():
     seed = args.seed
     EXPERIMENT = args.experiment
 
-    # 生成参数字典
+    # Build the argument dictionary
     config = {
         "device": device,
         "epochs": epochs,
@@ -328,7 +328,7 @@ class AgentGraphDatasetTest(Dataset):
                     pickle.dump(self.cache_dir, f)
                 self.cacheflag = True
 
-        # 不管缓存与否，这里始终重新生成 edge_index 和 edge_attr
+        # Always rebuild edge_index and edge_attr, even if cached
         origin_data = self.dataset[idx]
         adj_matrix = origin_data["A"][self.adj_key]
         adj_matrix_np = np.array(adj_matrix)
@@ -377,7 +377,7 @@ class OursMethod(nn.Module):
         emb_token = x_sentance + x_token
         # emb_token = self.gnn(emb_token, edge_index) + emb_token
 
-        # emb_token_nei = self.gnn(emb_token, edge_index) # 这里不加上ego info, 等下用token-level info
+        # emb_token_nei = self.gnn(emb_token, edge_index) # Skip ego info here; token-level info is added later
         emb_token_nei = self.gnn(emb_token, edge_index) + x_sentance
         return emb_sentance, emb_token_nei
 

@@ -1,49 +1,32 @@
-# MAS-Security
+# Agentic AI Security
 
-Reading notes, paper catalog, and working copies for **LLM multi-agent system (MAS) security** — attacks, graph/topology defenses, benchmarks, and self-healing.
+A public reading library for **agentic AI security**: multi-agent LLM systems, prompt injection and tool use, jailbreaks and backdoors, and using LLMs for security work.
 
-This is a research library, not a frozen SoK corpus. Classification follows the MAS scope used by [BrookeYangRui/multiagent_security_corpus](https://github.com/BrookeYangRui/multiagent_security_corpus) (LLM agents + a concrete security property + a material interaction path), then files papers as **attack / defense / benchmark / survey**.
+Paper PDFs are not stored here. Each paper has an English note with venue, link, problem, method, and result.
 
-Paper PDFs are **not** in this repository (copyright). Use the catalog links.
+## Layout
 
-## Start here
-
-| File | What it is |
+| Path | Contents |
 |---|---|
-| [papers/CATALOG.md](papers/CATALOG.md) | All papers: venue, one-line summary, official link |
-| [papers/GAP_2025_2026.md](papers/GAP_2025_2026.md) | 2025–2026 top-venue papers added after the original 62-paper list |
-| [papers/README.md](papers/README.md) | Taxonomy rules |
-| [papers/guides/Agentic_AI_Security_Reading_Guide_2024-2026.md](papers/guides/Agentic_AI_Security_Reading_Guide_2024-2026.md) | Longer notes on the original 62 papers |
+| [papers/CATALOG.md](papers/CATALOG.md) | Full index |
+| [papers/notes/](papers/notes/) | One markdown file per topic; every paper summarized |
+| [code/](code/) | Source-only snapshots of BlindGuard and XG-Guard (no weights, no datasets) |
 
-## Taxonomy
+## Topics
 
-```text
-01  MAS security
-      attacks / defenses / benchmarks / surveys
-02  Adjacent agent security (single-agent PI, tools, jailbreak, backdoor)
-03  AI for security (LLM as a security tool)
-04  Trustworthy-ML foundations for self-healing (calibration, OOD, BFT, …)
-```
+1. [MAS attacks](papers/notes/01-mas-attacks.md)
+2. [MAS defenses](papers/notes/02-mas-defenses.md)
+3. [MAS benchmarks](papers/notes/03-mas-benchmarks.md)
+4. [Surveys and SoKs](papers/notes/04-surveys.md)
+5. [Prompt injection and tools](papers/notes/05-prompt-injection.md)
+6. [Jailbreak, backdoor, privacy](papers/notes/06-jailbreak-backdoor-privacy.md)
+7. [AI for security](papers/notes/07-ai-for-security.md)
+8. [Trustworthy-ML foundations](papers/notes/08-foundations.md)
 
-A paper goes in **one** primary folder by dominant contribution.
+MAS notes follow the interaction-security scope used by [multiagent_security_corpus](https://github.com/BrookeYangRui/multiagent_security_corpus): LLM agents, a concrete security property, and a material interaction path. Adjacent agent-security and AI-for-security papers are kept as context, not mixed into that denominator.
 
-## Code
+## What is not in this repo
 
-`code/` keeps **source only** (no checkpoints, no dialogue dumps).
-
-| Tree | Paper | License | Notes |
-|---|---|---|---|
-| `code/blindguard/` | BlindGuard (ACL 2026) | Apache-2.0 | Official implementation, weights omitted |
-| `code/xg-guard/` | XG-Guard (ACL 2026) | See `NOTICE.md` | Third-party snapshot; datasets omitted |
-
-Upstream papers: [BlindGuard](https://aclanthology.org/2026.acl-long.1819/), [XG-Guard](https://aclanthology.org/2026.acl-long.1407/).
-
-## What this repo is not
-
-- Not meeting notes, advisor correspondence, or unpublished research proposals.
-- Not a copy of the USENIX 2027 SoK evidence ledger.
-- Not a dump of copyrighted PDFs.
-
-## Acknowledgements
-
-Literature coverage for 2025–2026 MAS papers was checked against [multiagent_security_corpus](https://github.com/BrookeYangRui/multiagent_security_corpus) (cutoff 2026-07-01).
+- Personal study notes or unpublished proposals
+- Copyrighted PDFs
+- Training checkpoints and generated dialogue dumps

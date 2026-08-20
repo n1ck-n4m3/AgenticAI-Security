@@ -35,25 +35,25 @@ def response2embeddings(responses):
 
 def embeddings2graph(embeddings, adj_matrix):
     edge_index = torch.tensor(np.array(adj_matrix.nonzero()))
-    edge_attr = torch.tensor(np.array(embeddings))[:, edge_index[1]]  # 仅仅针对统一回复的情况
+    edge_attr = torch.tensor(np.array(embeddings))[:, edge_index[1]]  # Only for the uniform-reply case
     #torch.tensor(np.array(response_embeddings)).shape  1*8*484
-    #取出入读的特征 edge_attr 1*56*384
+    #Incoming-edge features edge_attr, shape 1*56*384
     # import ipdb;ipdb.set_trace()
-    x = edge_attr[0, :] #第一轮 初始回复 边特征
-    # x = edge_attr[-1, :] #第一轮 初始回复 边特征
-    x = scatter_mean(x, edge_index[1], dim=0, dim_size=len(embeddings[0])) #聚合操作
+    x = edge_attr[0, :] #Round-1 initial-reply edge features
+    # x = edge_attr[-1, :] #Round-1 initial-reply edge features
+    x = scatter_mean(x, edge_index[1], dim=0, dim_size=len(embeddings[0])) #Aggregation
     
-    # 扩展边特征维度以匹配模型要求
-    edge_attr = edge_attr.transpose(0, 1)  # [num_edges, num_turns, hidden_dim] 交换维度
-    # 使用重复来扩展维度
+    # Expand edge-feature dim to match the model
+    edge_attr = edge_attr.transpose(0, 1)  # [num_edges, num_turns, hidden_dim] Transpose dimensions
+    # Repeat to expand dimensions
     edge_attr_expanded = edge_attr.reshape(edge_attr.size(0), -1)  # [num_edges, num_turns * hidden_dim]
     edge_attr_expanded = torch.nn.functional.pad(
         edge_attr_expanded,
         (0, 1536 - edge_attr_expanded.size(1)),
         mode='replicate'
-    )  # 扩展到1536维度
-     #edge_attr 边特征， 是多次对话的入度特征，多轮拼接
-     #x 节点特征，其实就是初始第一轮的特征
+    )  # Expand to 1536 dimensions
+     #edge_attr: in-degree features concatenated across dialogue turns
+     #x: node features from the first-round initial replies
     return x, edge_index, edge_attr_expanded
 
 
@@ -124,9 +124,9 @@ async def defense_communication(ag:AgentGraphWithDefense, gnn: MyGAT, query, con
 
     # PREM-GAD
     elif defend_type == "PREM":
-        # 获取异常分数
+        # Get anomaly scores
         anomaly_scores = gnn.get_anomaly_scores(x, edge_index)
-        # 选择topk个异常分数最高的节点
+        # Select the top-k highest-scoring nodes
         _, predicts = torch.topk(anomaly_scores.squeeze(), topk)
 
     original_predicts = predicts.tolist()
@@ -180,9 +180,9 @@ async def defense_communication(ag:AgentGraphWithDefense, gnn: MyGAT, query, con
         
         # PREM-GAD
         elif defend_type == "PREM":
-            # 获取异常分数
+            # Get anomaly scores
             anomaly_scores = gnn.get_anomaly_scores(x, edge_index)
-            # 选择topk个异常分数最高的节点
+            # Select the top-k highest-scoring nodes
             _, predicts = torch.topk(anomaly_scores.squeeze(), topk)
         
         for a_i in range(len(responses)):

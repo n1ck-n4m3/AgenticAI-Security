@@ -26,15 +26,15 @@ from Prem_gad import PREMModel
 
 def rescale(x: torch.Tensor) -> torch.Tensor:
     """
-    重新缩放分数到[0,1]区
+    Rescale scores to [0, 1]
     
-    间
+    range
     
     Args:
-        x: 输入张量
+        x: Input tensor
         
     Returns:
-        缩放后的张量
+        Rescaled tensor
     """
     return (x + 1) / 2
 
@@ -45,7 +45,7 @@ class ContrastiveGAE(torch.nn.Module):
         self.num_layers = num_layers
         self.heads = heads
         
-        # 编码器层 - 不使用边特征
+        # Encoder layers (no edge features)
         self.encoder_convs = nn.ModuleList()
         self.encoder_convs.append(GATConv(in_channels, hidden_channels, heads=heads))
         
@@ -58,7 +58,7 @@ class ContrastiveGAE(torch.nn.Module):
             GATConv(hidden_channels * heads, latent_channels, heads=1)
         )
         
-        # 投影头
+        # Projection head
         self.projection = nn.Sequential(
             nn.Linear(latent_channels, hidden_channels),
             nn.ReLU(),
@@ -89,32 +89,32 @@ class ContrastiveGAE(torch.nn.Module):
 
 def info_nce_loss(features, batch, temperature=0.1):
     """
-    计算InfoNCE损失
-    features: 节点特征 [N, D]
-    batch: 指示每个节点属于哪个图的张量 [N]
+    InfoNCE loss
+    features: Node features [N, D]
+    batch: Tensor mapping each node to its graph [N]
     """
     if len(features) == 0:
         return torch.tensor(0.0, device=features.device)
         
     batch_size = batch.max().item() + 1
-    if batch_size < 2:  # 如果batch中只有一个图，跳过计算
+    if batch_size < 2:  # Skip if the batch contains only one graph
         return torch.tensor(0.0, device=features.device)
     
-    # 计算图表示
+    # Compute graph representations
     graph_features = global_mean_pool(features, batch)  # [B, D]
     
-    # 归一化特征
+    # Normalize features
     features = F.normalize(features, dim=1)
     graph_features = F.normalize(graph_features, dim=1)
     
-    # 计算所有节点与所有图之间的相似度
+    # Similarity between all nodes and all graphs
     sim_matrix = torch.mm(features, graph_features.t())  # [N, B]
     sim_matrix = sim_matrix / temperature
     
-    # 创建标签：每个节点应该与其所属的图最相似
+    # Labels: each node should match its own graph
     labels = batch
     
-    # 计算交叉熵损失
+    # Cross-entropy loss
     loss = F.cross_entropy(sim_matrix, labels)
     
     return loss
@@ -123,7 +123,7 @@ def train(model, train_loader, optimizer, defend_type, device):
     model.train()
     total_loss = 0
     num_batches = 0
-    # 定义初始Tensor
+    # Initialize tensors
     anamaly_ori_idx = torch.tensor([1, 1, 1, 0, 0, 0, 0, 0]).to(device)
     
     for data in train_loader:
@@ -170,26 +170,26 @@ def train(model, train_loader, optimizer, defend_type, device):
 
         # PREM-GAD
         elif defend_type == "PREM":
-            # 获取数据
+            # Load a batch
             en_p, en_n, eg_p, eg_aug = model._get_prem_data(x, edge_index, device)
             
-            # 计算分数
+            # Compute scores
             score_pos = rescale(model(en_p, edge_index))
-            score_aug = rescale(model(en_p, edge_index))  # 使用相同的聚合特征
-            score_nod = rescale(model(en_p, edge_index))  # 使用相同的聚合特征
+            score_aug = rescale(model(en_p, edge_index))  # Use the same aggregated features
+            score_nod = rescale(model(en_p, edge_index))  # Use the same aggregated features
             
-            # 创建标签
+            # Create labels
             num_nodes = x.size(0)
             label_zeros = torch.zeros(1, num_nodes).to(device)
             label_ones = torch.ones(1, num_nodes).to(device)
             
-            # 计算损失
+            # Compute loss
             loss_function = nn.BCELoss()
             loss_pos = loss_function(score_pos, label_zeros)
             loss_aug = loss_function(score_aug, label_ones)
             loss_nod = loss_function(score_nod, label_ones)
             
-            # 总损失 (使用默认权重)
+            # Total loss (default weights)
             alpha = 0.3
             gamma = 0.4
             loss = loss_pos + alpha * loss_aug + gamma * loss_nod
@@ -242,26 +242,26 @@ def test(model, test_loader, defend_type, device):
                 loss = 0.8 * attr_loss + 0.2 * struct_loss
             
             elif defend_type == "PREM":
-                # 获取数据
+                # Load a batch
                 en_p, en_n, eg_p, eg_aug = model._get_prem_data(x, edge_index, device)
                 
-                # 计算分数
+                # Compute scores
                 score_pos = rescale(model(en_p, edge_index))
                 score_aug = rescale(model(en_p, edge_index))
                 score_nod = rescale(model(en_p, edge_index))
                 
-                # 创建标签
+                # Create labels
                 num_nodes = x.size(0)
                 label_zeros = torch.zeros(1, num_nodes).to(device)
                 label_ones = torch.ones(1, num_nodes).to(device)
                 
-                # 计算损失
+                # Compute loss
                 loss_function = nn.BCELoss()
                 loss_pos = loss_function(score_pos, label_zeros)
                 loss_aug = loss_function(score_aug, label_ones)
                 loss_nod = loss_function(score_nod, label_ones)
                 
-                # 总损失
+                # Total loss
                 alpha = 0.3
                 gamma = 0.4
                 loss = loss_pos + alpha * loss_aug + gamma * loss_nod
@@ -269,7 +269,7 @@ def test(model, test_loader, defend_type, device):
             total_loss += loss.item()
             num_batches += 1
     
-    return total_loss / max(num_batches, 1)  # 避免除以0
+    return total_loss / max(num_batches, 1)  # Avoid division by zero
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Experiments to train Contrastive Graph Autoencoder")
@@ -315,29 +315,29 @@ def parse_arguments():
 def main():
     args = parse_arguments()
     
-    # 数据加载
+    # Load data
     train_dataset = AgentGraphDataset(args.dataset_path, phase="train")
     val_dataset = AgentGraphDataset(args.dataset_path, phase="val")
     
-    print(f"训练集大小: {len(train_dataset)}")
-    print(f"验证集大小: {len(val_dataset)}")
+    print(f"Train set size: {len(train_dataset)}")
+    print(f"Val set size: {len(val_dataset)}")
     
     trainloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    # 修改验证集的batch_size，确保每个batch至少有两个样本
+    # Use a val batch size of at least two samples
     test_batch_size = min(args.batch_size, max(2, len(val_dataset) // 10))
     testloader = DataLoader(val_dataset, batch_size=test_batch_size, shuffle=False)
     
-    print(f"使用的测试batch大小: {test_batch_size}")
+    print(f"Test batch size: {test_batch_size}")
     
-    # 获取输入维度
+    # Input dimension
     example = train_dataset[0]
     edge_attr = example.edge_attr
-    in_channels = edge_attr.size(-1)  # 使用边特征的维度作为输入维度
+    in_channels = edge_attr.size(-1)  # Use the edge-feature dimension as the input size
     
-    # 设置设备
+    # Device
     device = f"cuda:{args.device}" if torch.cuda.is_available() else "cpu"
     
-    # 初始化模型
+    # Initialize model
     # model = ContrastiveGAE(
     #     in_channels=in_channels,
     #     hidden_channels=args.hidden_dim,
@@ -366,26 +366,26 @@ def main():
         model = PREMModel(
             n_in=in_channels,
             n_hidden=args.hidden_dim,
-            k=args.prem_k  # 使用参数化的聚合步数
+            k=args.prem_k  # Use the parameterized number of aggregation steps
         )
 
     model.to(device)
     #detector.to(device)
     
-    # 确保模型参数是float32
+    # Keep model parameters in float32
     for param in model.parameters():
         param.data = param.data.float()
     
     # checkpoint = torch.load("checkpoint_un2/mmlu/20250616_135909-hiddim_1024-latent_512-heads_8-layers_2-epochs_50-lr_0.001-temp_0.1.pth", map_location=torch.device('cpu'))
     # model.load_state_dict(checkpoint)
         
-    # 优化器和学习率调度器
+    # Optimizer and LR scheduler
     optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = CosineAnnealingLR(optimizer, T_max=10, eta_min=1e-5)
     
     best_loss = float('inf')
     
-    # 训练循环
+    # Training loop
     for epoch in range(args.epochs):
         train_loss = train(model, trainloader, optimizer, args.defend_type, device=device)
         test_loss = test(model, testloader, args.defend_type, device=device)
@@ -393,7 +393,7 @@ def main():
         
         print(f"Epoch {epoch}/{args.epochs} || Training Loss: {train_loss:.4f} || Test Loss: {test_loss:.4f} || Samples in batch: {test_batch_size}")
         
-        if train_loss < best_loss:  # 只在测试损失大于0时保存
+        if train_loss < best_loss:  # Save only when the monitored metric improves
             best_loss = train_loss
             torch.save(model.state_dict(), args.save_path)
             print("Model saved!")

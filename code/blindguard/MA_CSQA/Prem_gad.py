@@ -19,26 +19,26 @@ import numpy as np
 
 class PREMDiscriminator(nn.Module):
     """
-    PREM判别器，用于计算节点特征与邻居特征的相似度
+    PREM discriminator: similarity of node features to neighbor features
     """
     
     def __init__(self, n_in: int, n_hidden: int):
         """
-        初始化判别器
+        Initialize the discriminator
         
         Args:
-            n_in: 输入特征维度
-            n_hidden: 隐藏层维度
+            n_in: Input feature dim
+            n_hidden: Hidden dim
         """
         super(PREMDiscriminator, self).__init__()
         self.fc_g = nn.Linear(n_in, n_hidden)
         self.fc_n = nn.Linear(n_in, n_hidden)
         
-        # 初始化权重
+        # Initialize weights
         self._init_weights()
     
     def _init_weights(self):
-        """初始化网络权重"""
+        """Initialize network weights"""
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_uniform_(m.weight.data)
@@ -47,39 +47,39 @@ class PREMDiscriminator(nn.Module):
     
     def forward(self, features: torch.Tensor, summary: torch.Tensor) -> torch.Tensor:
         """
-        前向传播
+        Forward pass
         
         Args:
-            features: 节点特征 [N, D]
-            summary: 邻居聚合特征 [N, D]
+            features: Node features [N, D]
+            summary: Aggregated neighbor features [N, D]
             
         Returns:
-            相似度分数 [1, N]
+            Similarity scores [1, N]
         """
-        # 计算余弦相似度
+        # Cosine similarity
         s = F.cosine_similarity(self.fc_n(features), self.fc_g(summary))
         return -1 * s.unsqueeze(0)
 
 
 class PREMModel(nn.Module):
     """
-    PREM主模型，用于图异常检测
+    PREM model for graph anomaly detection
     """
     
     def __init__(self, n_in: int, n_hidden: int, k: int = 2):
         """
-        初始化PREM模型
+        Initialize PREM
         
         Args:
-            n_in: 输入特征维度
-            n_hidden: 隐藏层维度
-            k: 聚合步数
+            n_in: Input feature dim
+            n_hidden: Hidden dim
+            k: Aggregation steps
         """
         super(PREMModel, self).__init__()
         self.k = k
         self.discriminator = PREMDiscriminator(n_in, n_hidden)
         
-        # 缓存机制
+        # Cache
         self.cached_weight = None
         self.cached_features_weighted = None
         self.cached_eg = None
@@ -87,54 +87,54 @@ class PREMModel(nn.Module):
     
     def _aggregate_neighbors(self, features: torch.Tensor, edge_index: torch.Tensor, num_nodes: int) -> torch.Tensor:
         """
-        聚合k跳邻居特征
+        Aggregate k-hop neighbor features
         
         Args:
-            features: 节点特征 [N, D]
-            edge_index: 边索引 [2, E]
-            num_nodes: 节点数量
+            features: Node features [N, D]
+            edge_index: Edge index [2, E]
+            num_nodes: Number of nodes
             
         Returns:
-            聚合后的特征 [N, D]
+            Aggregated features [N, D]
         """
         x = features.clone()
         
         for _ in range(self.k):
-            # 计算度数的归一化
+            # Degree normalization
             deg = torch.bincount(edge_index[0], minlength=num_nodes).float().clamp(min=1)
             norm = torch.pow(deg, -0.5)
             
-            # 对称归一化
+            # Symmetric normalization
             x = x * norm.unsqueeze(1)
             
-            # 消息传递
+            # Message passing
             out = scatter_mean(x[edge_index[1]], edge_index[0], dim=0, dim_size=num_nodes)
             
-            # 再次归一化
+            # Normalize again
             x = out * norm.unsqueeze(1)
         
         return x
     
     def _get_diagonal_weight(self, edge_index: torch.Tensor, num_nodes: int) -> torch.Tensor:
-        """计算对角权重矩阵"""
-        # 创建单位矩阵
+        """Diagonal weight matrix"""
+        # Identity matrix
         identity = torch.eye(num_nodes, device=edge_index.device)
         
-        # 聚合单位矩阵
+        # Aggregate the identity
         aggregated = self._aggregate_neighbors(identity, edge_index, num_nodes)
         
-        # 提取对角线元素
+        # Extract diagonal
         return torch.diag(aggregated)
     
     def _preprocess_graph(self, x: torch.Tensor, edge_index: torch.Tensor, num_nodes: int):
-        """预处理图数据，计算聚合特征"""
-        # 计算对角权重
+        """Preprocess the graph and compute aggregated features"""
+        # Diagonal weights
         weight = self._get_diagonal_weight(edge_index, num_nodes)
         
-        # 聚合邻居特征
+        # Aggregate neighbor features
         aggregated = self._aggregate_neighbors(x, edge_index, num_nodes)
         
-        # 计算加权特征和残差
+        # Weighted features and residual
         features_weighted = (x.t() * weight).t()
         eg = (aggregated - features_weighted)
         
@@ -142,22 +142,22 @@ class PREMModel(nn.Module):
     
     def _get_prem_data(self, x: torch.Tensor, edge_index: torch.Tensor, device: torch.device):
         """
-        为PREM方法准备数据
+        Prepare tensors for PREM
         
         Args:
-            x: 节点特征
-            edge_index: 边索引
-            device: 设备
+            x: Node features
+            edge_index: Edge index
+            device: Device
             
         Returns:
-            en_p, en_n, eg_p, eg_aug: PREM所需的数据
+            en_p, en_n, eg_p, eg_aug: Tensors required by PREM
         """
-        # 原始特征
+        # Raw features
         en_p = x
-        # eg_p = x  # 简化处理，使用原始特征作为聚合特征
+        # eg_p = x  # Simplified: use raw features as aggregated features
         _, _, eg_p = self._preprocess_graph(x, edge_index, x.shape[0])
         
-        # 随机打乱
+        # Shuffle
         perm = torch.randperm(en_p.shape[0])
         en_n = en_p[perm]
         eg_aug = eg_p[perm]
@@ -166,62 +166,62 @@ class PREMModel(nn.Module):
     
     def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
         """
-        前向传播
+        Forward pass
         
         Args:
-            x: 节点特征 [N, D]
-            edge_index: 边索引 [2, E]
+            x: Node features [N, D]
+            edge_index: Edge index [2, E]
             
         Returns:
-            异常分数 [1, N]
+            Anomaly scores [1, N]
         """
         num_nodes = x.size(0)
         
-        # 检查是否需要重新计算缓存
+        # Recompute cache if needed
         if (self.cached_weight is None or 
             self.cached_weight.size(0) != num_nodes or
             self.cached_en is None or
             not torch.equal(self.cached_en, x)):
             
-            # 重新计算
+            # Recompute
             weight, features_weighted, eg = self._preprocess_graph(x, edge_index, num_nodes)
             
-            # 更新缓存
+            # Update cache
             self.cached_weight = weight
             self.cached_features_weighted = features_weighted
             self.cached_eg = eg
             self.cached_en = x.clone()
         else:
-            # 使用缓存
+            # Use cache
             eg = self.cached_eg
         
-        # 计算异常分数
+        # Compute anomaly scores
         score = self.discriminator(x.detach(), eg.detach())
         return score
     
     def encode(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
         """
-        编码函数，返回聚合后的特征
+        Encode: return aggregated features
         
         Args:
-            x: 节点特征
-            edge_index: 边索引
+            x: Node features
+            edge_index: Edge index
             
         Returns:
-            聚合特征
+            Aggregated features
         """
         num_nodes = x.size(0)
         
-        # 检查缓存
+        # Check cache
         if (self.cached_weight is None or 
             self.cached_weight.size(0) != num_nodes or
             self.cached_en is None or
             not torch.equal(self.cached_en, x)):
             
-            # 重新计算
+            # Recompute
             weight, features_weighted, eg = self._preprocess_graph(x, edge_index, num_nodes)
             
-            # 更新缓存
+            # Update cache
             self.cached_weight = weight
             self.cached_features_weighted = features_weighted
             self.cached_eg = eg
@@ -231,13 +231,13 @@ class PREMModel(nn.Module):
     
     def get_anomaly_scores(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
         """
-        获取异常分数
+        Get anomaly scores
         
         Args:
-            x: 节点特征
-            edge_index: 边索引
+            x: Node features
+            edge_index: Edge index
             
         Returns:
-            异常分数
+            Anomaly scores
         """
         return self.forward(x, edge_index)

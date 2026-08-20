@@ -1,29 +1,29 @@
-# MAS Security（核心集）
+# MAS security (core set)
 
-本目录只收 **LLM 多智能体 + 具体安全性质 + 交互路径是机制一部分** 的论文。
+This folder is the index for **LLM multi-agent systems** where a concrete security property and an interaction path are part of the mechanism.
 
-| 子目录 | 主贡献 | 本地 PDF |
-|---|---|---:|
-| [`attacks/`](attacks/) | 攻击 / 威胁机制 | 26 |
-| [`defenses/`](defenses/) | 防御 / 韧性 / 协议 | 18 |
-| [`benchmarks/`](benchmarks/) | 基准 / 测量 / 评测框架 | 11 |
-| [`surveys/`](surveys/) | Survey / SoK | 3 |
+Full notes live under [`../notes/`](../notes/). One-line entries and links: [`../CATALOG.md`](../CATALOG.md). 2025-2026 additions are marked with a star in the catalog; rationale: [`../GAP_2025_2026.md`](../GAP_2025_2026.md).
 
-完整条目（含链接与一句话）见 [`../CATALOG.md`](../CATALOG.md)。2025–2026 新补篇目标了 ★，见 [`../GAP_2025_2026.md`](../GAP_2025_2026.md)。
+| Sub-area | Dominant contribution | Notes |
+|---|---|---|
+| Attacks | Threat mechanism | [01-mas-attacks.md](../notes/01-mas-attacks.md) |
+| Defenses | Defense, resilience, protocol | [02-mas-defenses.md](../notes/02-mas-defenses.md) |
+| Benchmarks | Measurement / evaluation | [03-mas-benchmarks.md](../notes/03-mas-benchmarks.md) |
+| Surveys | Map rather than a new attack or defense | [04-surveys.md](../notes/04-surveys.md) |
 
-## 和 G-Safeguard 族怎么连
+## How the G-Safeguard family connects
 
 ```text
-监督图检测          G-Safeguard
-未知攻击离群        BlindGuard
-token 可解释        XG-Guard
-跨轮重建            GUARDIAN
-结构+纠错           Resilience / ResMAS / Byzantine Reliability
-embedding 失效      Embedding-Based Defenses Fail     ★ 必读
-去中心信誉          SentinelNet / Credibility Scoring
-传染与自愈          Prompt Infection / Cowpox
-控制流而非语义      Malicious Code / ControlValve
-黑盒泄漏            MASLeak / Topology Matters
-协议层              A2ASecBench / BlockA2A / SAFEFLOW
-合取/隐蔽信道       Conjunctive / CoMet / Secret Collusion
+Supervised graph detection     G-Safeguard
+Unknown-attack outliers        BlindGuard
+Token-level explanation        XG-Guard
+Cross-turn reconstruction      GUARDIAN
+Structure + correction         Resilience / ResMAS / Byzantine Reliability
+Embedding failure              When Embedding-Based Defenses Fail
+Decentralized reputation       SentinelNet / Credibility Scoring
+Contagion and recovery         Prompt Infection / Cowpox
+Control flow, not semantics    Malicious Code / ControlValve
+Black-box leakage              MASLeak / Topology Matters
+Protocol layer                 A2ASecBench / BlockA2A / SAFEFLOW
+Conjunctive / covert channels  Conjunctive / CoMet / Secret Collusion
 ```

@@ -12,21 +12,21 @@ from datetime import datetime
 
 class GCNModelAE(nn.Module):
     """
-    图自编码器模型，包含属性重构和结构重构
+    Graph autoencoder with attribute and structure reconstruction
     """
     def __init__(self, in_channels, hidden_channels, latent_channels, dropout=0.):
         super(GCNModelAE, self).__init__()
         self.dropout = dropout
         
-        # 编码器
+        # Encoder
         self.encoder_conv1 = GCNConv(in_channels, hidden_channels)
         self.encoder_conv2 = GCNConv(hidden_channels, latent_channels)
         
-        # 属性解码器
+        # Attribute decoder
         self.attr_decoder_conv1 = GCNConv(latent_channels, hidden_channels)
         self.attr_decoder_conv2 = GCNConv(hidden_channels, in_channels)
         
-        # 结构解码器（内积）
+        # Structure decoder (inner product)
         # self.struct_decoder = nn.Sequential(
         #     nn.Linear(latent_channels, hidden_channels),
         #     nn.ReLU(),
@@ -35,7 +35,7 @@ class GCNModelAE(nn.Module):
         self.struct_decoder_conv = GCNConv(latent_channels, hidden_channels)
         
     def encode(self, x, edge_index):
-        # 编码过程
+        # Encode
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.encoder_conv1(x, edge_index)
         x = F.relu(x)
@@ -45,7 +45,7 @@ class GCNModelAE(nn.Module):
         return x
     
     def decode_attributes(self, x, edge_index):
-        # 属性重构
+        # Attribute reconstruction
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.attr_decoder_conv1(x, edge_index)
         x = F.relu(x)
@@ -55,7 +55,7 @@ class GCNModelAE(nn.Module):
         return x
     
     def decode_structure(self, x, edge_index):
-        # 结构重构（邻接矩阵重构）
+        # Structure reconstruction (adjacency)
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.struct_decoder_conv(x, edge_index)
         x = F.relu(x)
@@ -63,9 +63,9 @@ class GCNModelAE(nn.Module):
         return adj_recon
     
     def forward(self, x, edge_index):
-        # 编码
+        # Encode
         z = self.encode(x, edge_index)
-        # 解码
+        # Decode
         x_recon = self.decode_attributes(z, edge_index)
         adj_recon = self.decode_structure(z, edge_index)
         
@@ -79,12 +79,12 @@ class AnomalyDetector:
     
     def train(self, data, optimizer, epochs=200):
         """
-        训练模型
+        Train the model
         """
         self.model.train()
         best_loss = float('inf')
         
-        # 准备数据
+        # Prepare data
         x = data.x.to(self.device)
         edge_index = data.edge_index.to(self.device)
         adj = to_dense_adj(edge_index)[0]
@@ -92,17 +92,17 @@ class AnomalyDetector:
         for epoch in range(epochs):
             optimizer.zero_grad()
             
-            # 前向传播
+            # Forward pass
             x_recon, adj_recon, _ = self.model(x, edge_index)
             
-            # 计算损失
+            # Compute loss
             attr_loss = F.mse_loss(x_recon, x)
             struct_loss = F.binary_cross_entropy(adj_recon, adj)
             
-            # 总损失
+            # Total loss
             loss = 0.8 * attr_loss + 0.2 * struct_loss
             
-            # 反向传播
+            # Backward pass
             loss.backward()
             optimizer.step()
             
@@ -116,7 +116,7 @@ class AnomalyDetector:
     
     def detect_anomalies(self, data, threshold=0.5):
         """
-        检测异常节点
+        Detect anomalous nodes
         """
         self.model.eval()
         
@@ -125,24 +125,24 @@ class AnomalyDetector:
             edge_index = data.edge_index.to(self.device)
             adj = to_dense_adj(edge_index)[0]
             
-            # 获取重构结果
+            # Reconstructions
             x_recon, adj_recon, z = self.model(x, edge_index)
             
-            # 计算异常分数
+            # Compute anomaly scores
             attr_errors = torch.mean((x - x_recon) ** 2, dim=1)
             struct_errors = torch.mean((adj - adj_recon) ** 2, dim=1)
             
-            # 综合分数
+            # Combined scores
             anomaly_scores = (attr_errors + struct_errors) / 2
             
-            # 确定异常标签
+            # Assign anomaly labels
             anomaly_labels = (anomaly_scores > threshold).float()
             
-            # 转到CPU并转换为numpy
+            # Move to CPU and convert to numpy
             scores = anomaly_scores.cpu().numpy()
             labels = anomaly_labels.cpu().numpy()
             
-            # 为每个节点创建详细信息
+            # Per-node details
             node_details = []
             for i in range(len(scores)):
                 node_details.append({
@@ -153,7 +153,7 @@ class AnomalyDetector:
                     'struct_error': float(struct_errors[i].cpu())
                 })
             
-            # 按异常分数排序
+            # Sort by anomaly score
             sorted_indices = np.argsort(-scores)
             
             return {
@@ -167,30 +167,30 @@ class AnomalyDetector:
     
     def save_results(self, results, output_dir='output'):
         """
-        保存检测结果
+        Save detection results
         """
         os.makedirs(output_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        # 保存详细结果
+        # Save detailed results
         with open(os.path.join(output_dir, f'anomaly_detection_{timestamp}.txt'), 'w') as f:
-            f.write("异常检测结果:\n")
-            f.write(f"检测到的异常节点数量: {results['num_anomalies']}\n")
-            f.write(f"使用的阈值: {results['threshold_used']}\n\n")
+            f.write("Anomaly detection results:\n")
+            f.write(f"Number of flagged anomalous nodes: {results['num_anomalies']}\n")
+            f.write(f"Threshold used: {results['threshold_used']}\n\n")
             
-            f.write("节点详细信息 (按异常分数排序):\n")
+            f.write("Per-node details (sorted by anomaly score):\n")
             for idx in results['sorted_indices']:
                 node = results['node_details'][idx]
-                f.write(f"节点 {node['node_id']}:\n")
-                f.write(f"  异常分数: {node['anomaly_score']:.4f}\n")
-                f.write(f"  属性重构误差: {node['attr_error']:.4f}\n")
-                f.write(f"  结构重构误差: {node['struct_error']:.4f}\n")
-                f.write(f"  是否异常: {node['is_anomaly']}\n\n")
+                f.write(f"Node {node['node_id']}:\n")
+                f.write(f"  Anomaly scores: {node['anomaly_score']:.4f}\n")
+                f.write(f"  Attribute reconstruction error: {node['attr_error']:.4f}\n")
+                f.write(f"  Structure reconstruction error: {node['struct_error']:.4f}\n")
+                f.write(f"  Is anomaly: {node['is_anomaly']}\n\n")
         
-        # 保存分数
+        # Save scores
         np.save(os.path.join(output_dir, f'anomaly_scores_{timestamp}.npy'), results['anomaly_scores'])
         
-        print(f"结果已保存到 {output_dir} 目录")
+        print(f"Results saved to {output_dir} directory")
 
 def parse_args():
     parser = argparse.ArgumentParser(description='GAE-based Anomaly Detection')
@@ -209,11 +209,11 @@ def main():
     args = parse_args()
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     
-    # 加载数据
-    # 这里需要根据你的具体数据格式进行修改
+    # Load data
+    # Adjust this to match your data format
     # data = YourDataLoader()
     
-    # 初始化模型
+    # Initialize model
     model = GCNModelAE(
         in_channels=data.num_features,
         hidden_channels=args.hidden_dim,
@@ -226,20 +226,20 @@ def main():
     if args.mode == 'train':
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         detector.train(data, optimizer, args.epochs)
-        print("训练完成，模型已保存")
+        print("Training finished; model saved")
     
     else:  # test mode
-        # 加载预训练模型
+        # Load the pretrained model
         model.load_state_dict(torch.load(args.model_path))
-        print(f"加载模型从: {args.model_path}")
+        print(f"Load model from: {args.model_path}")
         
-        # 进行异常检测
+        # Run anomaly detection
         results = detector.detect_anomalies(data, args.threshold)
         
-        # 保存结果
+        # Save results
         detector.save_results(results)
         
-        # 如果有真实标签，计算评估指标
+        # If labels exist, compute metrics
         if hasattr(data, 'y'):
             auc = roc_auc_score(data.y.cpu().numpy(), results['anomaly_scores'])
             ap = average_precision_score(data.y.cpu().numpy(), results['anomaly_scores'])

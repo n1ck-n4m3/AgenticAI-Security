@@ -132,7 +132,7 @@ def main():
         scheduler.step()
         if test_acc > best_acc: 
             best_acc = test_acc
-            torch.save(gnn.state_dict(), args.save_path)  # 保存模型
+            torch.save(gnn.state_dict(), args.save_path)  # Save the model
             print(f"Epoch {i}/{args.epochs} || Training Loss: {train_loss:.4f}, Accuracy: {train_acc:.2f}% || Test Loss: {test_loss:.4f}, Accuracy: {test_acc:.2f}% || Save!")
         else:
             print(f"Epoch {i}/{args.epochs} || Training Loss: {train_loss:.4f}, Accuracy: {train_acc:.2f}% || Test Loss: {test_loss:.4f}, Accuracy: {test_acc:.2f}%")

@@ -141,7 +141,7 @@ def cal_mas_acc(agent_dialogue_dataset):
                 turn_i_data = communciation_data[i]
                 
                 for agent_idx, text in turn_i_data:
-                        # result = judge_output(text, question, incorrect_answer) #仍然要改
+                        # result = judge_output(text, question, incorrect_answer) #still needs updating
                         # if result.is_success == 1: 
                         #     turns_succ[i] += 1
                         if correct_answer in extract_answer(str(text)):

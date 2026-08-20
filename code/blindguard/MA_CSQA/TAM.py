@@ -42,9 +42,9 @@ class TAMModel(nn.Module):
         self.fc5 = nn.Linear(in_channels*2, 1)
         
     def forward(self, x, edge_index):
-        # 编码
+        # Encode
         z = self.encoder(x, edge_index)
-        # 特征变换
+        # Feature transform
         z1 = self.fc1(z)
         z2 = self.fc2(z)
         
@@ -84,7 +84,7 @@ class TAMModel(nn.Module):
 #         self.lamda = lamda
         
     def reg_edge(self, emb, adj):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         emb = F.normalize(emb, p=2, dim=-1)
         sim = torch.mm(emb, emb.t())
         adj_inv = (1 - adj)
@@ -97,7 +97,7 @@ class TAMModel(nn.Module):
         return torch.sum(sim_sum)
     
     def neg_all(self, emb, anamaly_idx, tem=0.3):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         #import ipdb; ipdb.set_trace()
         emb = F.normalize(emb, p=2, dim=-1)
         sim = torch.mm(emb, emb.t()) / tem
@@ -111,7 +111,7 @@ class TAMModel(nn.Module):
         return loss
     
     def ana_class(self, x, edge_index, anamaly_idx):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         # import ipdb; ipdb.set_trace()
         num_nodes = x.size(0)
         adj_t = SparseTensor(row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes))
@@ -127,7 +127,7 @@ class TAMModel(nn.Module):
         return loss
     
     def ana_infer(self, x, edge_index):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         num_nodes = x.size(0)
         adj_t = SparseTensor(row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes))
         #adj_t = adj_t.set_diag()
@@ -141,7 +141,7 @@ class TAMModel(nn.Module):
         return x
     
     def neg_all1(self, emb, anamaly_idx, tem=0.3):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         #import ipdb; ipdb.set_trace()
         emb = F.normalize(emb, p=2, dim=-1)
         sim = torch.mm(emb, emb.t())
@@ -151,7 +151,7 @@ class TAMModel(nn.Module):
         return loss
     
     def neg_clas(self, emb, anamaly_idx, edge_index):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         import ipdb; ipdb.set_trace()
         emb = F.normalize(emb, p=2, dim=-1)
         sim = torch.mm(emb, emb.t())
@@ -162,12 +162,12 @@ class TAMModel(nn.Module):
         return torch.mean(sim_sum)
     
     def max_message(self, feature, adj_matrix):
-        """最大化消息流"""
+        """Maximize message flow"""
         feature = F.normalize(feature, p=2, dim=-1)
         sim_matrix = torch.mm(feature, feature.t())
         sim_matrix = sim_matrix * adj_matrix
         
-        # 处理无效值
+        # Handle invalid values
         sim_matrix[torch.isinf(sim_matrix)] = 0
         sim_matrix[torch.isnan(sim_matrix)] = 0
         
@@ -181,7 +181,7 @@ class TAMModel(nn.Module):
         return -torch.sum(message), message
     
     def inference(self, feature, adj_matrix):
-        """推理阶段计算异常分数"""
+        """Anomaly scores at inference"""
         feature = F.normalize(feature, p=2, dim=-1)
         sim_matrix = torch.mm(feature, feature.t())
         sim_matrix = sim_matrix * adj_matrix
@@ -194,14 +194,14 @@ class TAMModel(nn.Module):
         return message
     
     def inference_new(self, feature, adj_matrix):
-        """推理阶段计算异常分数"""
+        """Anomaly scores at inference"""
         feature = F.normalize(feature, p=2, dim=-1)
         sim_matrix = torch.mm(feature, feature.t())
         message = torch.sum(sim_matrix, 1)
         return message
     
 #     def train(self, data, optimizer):
-#         """训练模型"""
+#         """Train the model"""
 #         self.model.train()
 #         total_loss = 0
         
@@ -211,22 +211,22 @@ class TAMModel(nn.Module):
         
 #         optimizer.zero_grad()
         
-#         # 前向传播
+#         # Forward pass
 #         node_emb, feat1, feat2 = self.model(x, edge_index)
         
-#         # 计算损失
+#         # Compute loss
 #         loss, _ = self.max_message(node_emb, adj)
 #         reg_loss = self.reg_edge(feat1, adj)
 #         total_loss = loss + self.lamda * reg_loss
         
-#         # 反向传播
+#         # Backward pass
 #         total_loss.backward()
 #         optimizer.step()
         
 #         return total_loss.item()
     
 #     def detect_anomalies(self, data):
-#         """检测异常"""
+#         """Detect anomalies"""
 #         self.model.eval()
         
 #         with torch.no_grad():
@@ -234,10 +234,10 @@ class TAMModel(nn.Module):
 #             edge_index = data.edge_index.to(self.device)
 #             adj = to_dense_adj(edge_index)[0].to(self.device)
             
-#             # 获取节点嵌入
+#             # Node embeddings
 #             node_emb, _, _ = self.model(x, edge_index)
             
-#             # 计算异常分数
+#             # Compute anomaly scores
 #             message = self.inference(node_emb, adj)
 #             scores = 1 - self.normalize_score(message.cpu().numpy())
             
@@ -248,7 +248,7 @@ class TAMModel(nn.Module):
     
     @staticmethod
     def normalize_score(scores):
-        """归一化分数"""
+        """Normalize scores"""
         return (scores - scores.min()) / (scores.max() - scores.min()+1e-2)
 
 
@@ -275,9 +275,9 @@ class GATSCL(nn.Module):
         self.in_channels = in_channels
     
     def forward(self, x, edge_index):
-        # 编码
+        # Encode
         z = self.gat(x, edge_index)
-        # 特征变换
+        # Feature transform
         z1 = self.fc1(z)
         z2 = self.fc2(z)
         
@@ -298,7 +298,7 @@ class GATSCL(nn.Module):
         return z
     
     def encode2(self, x, edge_index):
-        # 先用GAT学习节点表示
+        # Learn node representations with GAT first
         # x_gat = self.gat(x, edge_index)
         # num_nodes = x_gat.size(0)
         # x_nei = x_gat.mean(0).unsqueeze(0).repeat(num_nodes, 1)
@@ -350,7 +350,7 @@ class GATSCL(nn.Module):
         return z
         
     def reg_edge(self, emb, adj):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         emb = F.normalize(emb, p=2, dim=-1)
         sim = torch.mm(emb, emb.t())
         adj_inv = (1 - adj)
@@ -363,7 +363,7 @@ class GATSCL(nn.Module):
         return torch.sum(sim_sum)
     
     def neg_all(self, emb, anamaly_idx, tem=0.3):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         #import ipdb; ipdb.set_trace()
         emb = F.relu(emb)
         emb = self.fc1(emb)
@@ -381,7 +381,7 @@ class GATSCL(nn.Module):
         return loss
     
     def ana_class(self, x, edge_index, anamaly_idx):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         # import ipdb; ipdb.set_trace()
         num_nodes = x.size(0)
         adj_t = SparseTensor(row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes))
@@ -397,7 +397,7 @@ class GATSCL(nn.Module):
         return loss
     
     def ana_infer(self, x, edge_index):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         num_nodes = x.size(0)
         adj_t = SparseTensor(row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes))
         #adj_t = adj_t.set_diag()
@@ -411,7 +411,7 @@ class GATSCL(nn.Module):
         return x
     
     def neg_all1(self, emb, anamaly_idx, tem=0.3):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         #import ipdb; ipdb.set_trace()
         emb = F.normalize(emb, p=2, dim=-1)
         sim = torch.mm(emb, emb.t())
@@ -421,7 +421,7 @@ class GATSCL(nn.Module):
         return loss
     
     def neg_clas(self, emb, anamaly_idx, edge_index):
-        """边的正则化损失"""
+        """Edge regularization loss"""
         import ipdb; ipdb.set_trace()
         emb = F.normalize(emb, p=2, dim=-1)
         sim = torch.mm(emb, emb.t())
@@ -432,12 +432,12 @@ class GATSCL(nn.Module):
         return torch.mean(sim_sum)
     
     def max_message(self, feature, adj_matrix):
-        """最大化消息流"""
+        """Maximize message flow"""
         feature = F.normalize(feature, p=2, dim=-1)
         sim_matrix = torch.mm(feature, feature.t())
         sim_matrix = sim_matrix * adj_matrix
         
-        # 处理无效值
+        # Handle invalid values
         sim_matrix[torch.isinf(sim_matrix)] = 0
         sim_matrix[torch.isnan(sim_matrix)] = 0
         
@@ -451,7 +451,7 @@ class GATSCL(nn.Module):
         return -torch.sum(message), message
     
     def inference(self, feature, adj_matrix):
-        """推理阶段计算异常分数"""
+        """Anomaly scores at inference"""
         feature = F.normalize(feature, p=2, dim=-1)
         sim_matrix = torch.mm(feature, feature.t())
         sim_matrix = sim_matrix * adj_matrix
@@ -464,7 +464,7 @@ class GATSCL(nn.Module):
         return message
     
     def inference_new(self, feature, adj_matrix):
-        """推理阶段计算异常分数"""
+        """Anomaly scores at inference"""
         feature = F.normalize(feature, p=2, dim=-1)
         sim_matrix = torch.mm(feature, feature.t())
         message = torch.sum(sim_matrix, 1)
@@ -472,7 +472,7 @@ class GATSCL(nn.Module):
     
     @staticmethod
     def normalize_score(scores):
-        """归一化分数"""
+        """Normalize scores"""
         return (scores - scores.min()) / (scores.max() - scores.min()+1e-2)
 
 # def parse_args():
@@ -493,11 +493,11 @@ class GATSCL(nn.Module):
 #     args = parse_args()
 #     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     
-#     # 加载数据
-#     # 这里需要根据具体数据格式进行修改
+#     # Load data
+#     # Adjust this to match the data format
 #     # data = YourDataLoader()
     
-#     # 初始化模型
+#     # Initialize model
 #     model = TAMModel(
 #         in_channels=data.num_features,
 #         hidden_channels=args.hidden_dim,
@@ -509,7 +509,7 @@ class GATSCL(nn.Module):
 #     detector = AnomalyDetector(model, device, args)
 #     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     
-#     # 训练
+#     # Train
 #     best_loss = float('inf')
 #     for epoch in tqdm(range(args.epochs), desc='Training'):
 #         loss = detector.train(data, optimizer)
@@ -521,11 +521,11 @@ class GATSCL(nn.Module):
 #             best_loss = loss
 #             torch.save(model.state_dict(), 'best_model.pth')
     
-#     # 异常检测
+#     # Anomaly detection
 #     results = detector.detect_anomalies(data)
 #     scores = results['anomaly_scores']
     
-#     # 评估
+#     # Evaluate
 #     if hasattr(data, 'y'):
 #         auc = roc_auc_score(data.y.cpu().numpy(), scores)
 #         ap = average_precision_score(data.y.cpu().numpy(), scores)

@@ -45,11 +45,11 @@ class MyGAE(torch.nn.Module):
         self.num_layers = num_layers
         self.heads = heads
         
-        # 计算边特征的实际维度
+        # Actual edge-feature dimension
         self.time_steps, self.edge_feat_dim = edge_dim
         self.total_edge_dim = self.time_steps * self.edge_feat_dim
         
-        # 编码器层
+        # Encoder layers
         self.encoder_convs = nn.ModuleList()
         self.encoder_convs.append(GATConv(in_channels, hidden_channels, heads=heads, edge_dim=self.total_edge_dim))
         
@@ -58,12 +58,12 @@ class MyGAE(torch.nn.Module):
                 GATConv(hidden_channels * heads, hidden_channels, heads=heads, edge_dim=self.total_edge_dim)
             )
         
-        # 最后一层编码器，压缩到潜在空间
+        # Last encoder layer: compress to latent space
         self.encoder_convs.append(
             GATConv(hidden_channels * heads, latent_channels, heads=1, edge_dim=self.total_edge_dim)
         )
         
-        # 解码器层
+        # Decoder layers
         self.decoder_convs = nn.ModuleList()
         self.decoder_convs.append(GATConv(latent_channels, hidden_channels, heads=heads, edge_dim=self.total_edge_dim))
         
@@ -72,12 +72,12 @@ class MyGAE(torch.nn.Module):
                 GATConv(hidden_channels * heads, hidden_channels, heads=heads, edge_dim=self.total_edge_dim)
             )
         
-        # 最后一层解码器，恢复到原始维度
+        # Last decoder layer: restore original dimension
         self.decoder_convs.append(
             GATConv(hidden_channels * heads, out_channels, heads=1, edge_dim=self.total_edge_dim)
         )
         
-        # 边属性重构器
+        # Edge-attribute reconstructor
         self.edge_predictor = nn.Sequential(
             nn.Linear(latent_channels * 2, hidden_channels),
             nn.ReLU(),
@@ -85,66 +85,66 @@ class MyGAE(torch.nn.Module):
         )
         
     def encode(self, x, edge_index, edge_attr):
-        # 处理边属性：将 [num_edges, time_steps, dim] 转换为 [num_edges, time_steps * dim]
+        # Flatten edge attributes [num_edges, time_steps, dim] -> [num_edges, time_steps * dim]
         edge_attr = edge_attr.view(edge_attr.size(0), -1)
         
-        # 编码过程
+        # Encode
         for i, conv in enumerate(self.encoder_convs):
             x = conv(x, edge_index, edge_attr)
-            if i != len(self.encoder_convs) - 1:  # 不是最后一层
+            if i != len(self.encoder_convs) - 1:  # Not the last layer
                 x = F.relu(x)
                 x = F.dropout(x, p=0.2, training=self.training)
         
         return x
         
     def decode(self, z, edge_index, edge_attr):
-        # 处理边属性：将 [num_edges, time_steps, dim] 转换为 [num_edges, time_steps * dim]
+        # Flatten edge attributes [num_edges, time_steps, dim] -> [num_edges, time_steps * dim]
         edge_attr = edge_attr.view(edge_attr.size(0), -1)
         
-        # 解码过程
+        # Decode
         for i, conv in enumerate(self.decoder_convs):
             z = conv(z, edge_index, edge_attr)
-            if i != len(self.decoder_convs) - 1:  # 不是最后一层
+            if i != len(self.decoder_convs) - 1:  # Not the last layer
                 z = F.relu(z)
                 z = F.dropout(z, p=0.2, training=self.training)
         
         return z
         
     def reconstruct_edge_attr(self, z, edge_index):
-        # 获取边两端的节点表示
+        # Representations of the two edge endpoints
         src, dst = edge_index
         z_src = z[src]
         z_dst = z[dst]
         
-        # 连接源节点和目标节点的表示
+        # Concatenate source and target node representations
         edge_input = torch.cat([z_src, z_dst], dim=1)
         
-        # 预测边属性
+        # Predict edge attributes
         pred_edge_attr = self.edge_predictor(edge_input)
-        # 重塑为原始维度 [num_edges, time_steps, edge_feat_dim]
+        # Reshape to [num_edges, time_steps, edge_feat_dim]
         pred_edge_attr = pred_edge_attr.view(-1, self.time_steps, self.edge_feat_dim)
         
         return pred_edge_attr
         
     def forward(self, x, edge_index, edge_attr):
-        # 编码
+        # Encode
         z = self.encode(x, edge_index, edge_attr)
         
-        # 解码节点特征
+        # Decode node features
         reconstructed_x = self.decode(z, edge_index, edge_attr)
         
-        # 重构边属性
+        # Reconstruct edge attributes
         reconstructed_edge_attr = self.reconstruct_edge_attr(z, edge_index)
         
         return reconstructed_x, reconstructed_edge_attr
 
 def reconstruction_loss(original, reconstructed, edge_index):
-    """计算重构误差"""
-    # 计算节点特征的重构误差
+    """Reconstruction error"""
+    # Node-feature reconstruction error
     node_loss = nn.MSELoss()(original, reconstructed)
     
-    # 计算结构重构误差（可选）
-    # 这里可以添加额外的结构相似性损失
+    # Optional structure reconstruction error
+    # Optional extra structural similarity loss
     
     return node_loss
 
@@ -154,7 +154,7 @@ def train(model, train_loader, optimizer, defend_type, device):
     num_batches = 0
     topk = 3
     num_auc = 0
-    # 定义初始Tensor
+    # Initialize tensors
     anamaly_ori_idx = torch.tensor([1, 1, 1, 0, 0, 0, 0, 0]).to(device)
     
     for data in train_loader:
@@ -264,7 +264,7 @@ def test(model, defend_type, test_data, device):
             # total_loss += loss.item()
             # num_batches += 1
     
-    return num_auc / len(test_data)  # 避免除以0
+    return num_auc / len(test_data)  # Avoid division by zero
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Experiments to train Graph Autoencoder")
@@ -272,7 +272,7 @@ def parse_arguments():
     parser.add_argument("--dataset_path", type=str, default="./ModelTrainingSet/memory_attack/dataset.pkl", help="Save path of the dataset")
     parser.add_argument("--test_path", type=str, default="./ModelTrainingSet/memory_attack/test_dataset.pkl", help="Save path of the dataset")
     parser.add_argument("--hidden_dim", type=int, default=1024)
-    parser.add_argument("--latent_dim", type=int, default=512)  # 添加潜在空间维度参数
+    parser.add_argument("--latent_dim", type=int, default=512)  # Latent dimension
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--num_heads", type=int, default=8)
     parser.add_argument("--num_layers", type=int, default=2)
@@ -307,29 +307,29 @@ def parse_arguments():
 def main():
     args = parse_arguments()
     set_seed(42)
-    # 数据加载
+    # Load data
     train_dataset = AgentGraphDataset(args.dataset_path, phase="train")
     import pickle
-    with open(args.test_path, 'rb') as f:  # 注意模式是 'rb' (二进制读取)
+    with open(args.test_path, 'rb') as f:  # Open in binary read mode ('rb')
         test_data = pickle.load(f)
     
-    print(f"训练集大小: {len(train_dataset)}")
-    print(f"验证集大小: {len(test_data)}")
+    print(f"Train set size: {len(train_dataset)}")
+    print(f"Val set size: {len(test_data)}")
     
     trainloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    # 修改验证集的batch_size，确保每个batch至少有两个样本
+    # Use a val batch size of at least two samples
     test_batch_size = 1
-    print(f"使用的测试batch大小: {test_batch_size}")
+    print(f"Test batch size: {test_batch_size}")
     
-    # 获取输入维度
+    # Input dimension
     example = train_dataset[0]
     edge_attr = example.edge_attr
-    in_channels = edge_attr.size(-1)  # 使用边特征的维度作为输入维度
+    in_channels = edge_attr.size(-1)  # Use the edge-feature dimension as the input size
     
-    # 设置设备
+    # Device
     device = f"cuda:{args.device}" if torch.cuda.is_available() else "cpu"
     
-    # 初始化模型
+    # Initialize model
     # model = ContrastiveGAE(
     #     in_channels=in_channels,
     #     hidden_channels=args.hidden_dim,
@@ -365,21 +365,21 @@ def main():
     model.to(device)
     #detector.to(device)
     
-    # 确保模型参数是float32
+    # Keep model parameters in float32
     for param in model.parameters():
         param.data = param.data.float()
     
     # checkpoint = torch.load("checkpoint_un2/mmlu/20250616_135909-hiddim_1024-latent_512-heads_8-layers_2-epochs_50-lr_0.001-temp_0.1.pth", map_location=torch.device('cpu'))
     # model.load_state_dict(checkpoint)
         
-    # 优化器和学习率调度器
+    # Optimizer and LR scheduler
     optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = CosineAnnealingLR(optimizer, T_max=10, eta_min=1e-5)
     
     best_loss = float('inf')
     best_auc = 0
     
-    # 训练循环
+    # Training loop
     for epoch in range(args.epochs):
         train_loss, train_auc = train(model, trainloader, optimizer, args.defend_type, device=device)
         test_auc = test(model, args.defend_type, test_data, device=device)
@@ -387,11 +387,11 @@ def main():
         
         print(f"Epoch {epoch}/{args.epochs} || Training Loss: {train_loss:.4f} || Training AUC: {train_auc:.4f} || Test auc: {test_auc:.4f} || Samples in batch: 1")
         
-        # if test_auc > best_auc:  # 只在测试损失大于0时保存
+        # if test_auc > best_auc:  # Save only when the monitored metric improves
         #     best_auc = test_auc 
         #     torch.save(model.state_dict(), args.save_path)
         #     print("Model saved!")
-        if train_auc > best_auc:  # 只在测试损失大于0时保存
+        if train_auc > best_auc:  # Save only when the monitored metric improves
             best_auc = train_auc
             torch.save(model.state_dict(), args.save_path)
             print("Model saved!")
